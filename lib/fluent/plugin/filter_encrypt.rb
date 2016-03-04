@@ -61,7 +61,7 @@ module Fluent
             r[key] = encrypt(value)
           end
         end
-        new_es.add(time, record)
+        new_es.add(time, r)
       end
       new_es
     end
