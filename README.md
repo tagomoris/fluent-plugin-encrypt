@@ -59,6 +59,9 @@ An example configuration to encrypt a field (named as "device_id"):
     # Or, to encrypt values in some fields
     # keys ["device_id","user_id","session"]
   </filter>
+  <match **>
+    @type stdout
+  </match>
 </label>
 ```
 
