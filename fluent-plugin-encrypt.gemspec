@@ -9,6 +9,7 @@ Gem::Specification.new do |spec|
   spec.summary       = %q{Fluentd filter plugin to encrypt fields}
   spec.description   = %q{This plugin converts data of specified fields, by encrypting using AES and base64 encoding for encrypted values}
   spec.homepage      = "https://github.com/tagomoris/fluent-plugin-encrypt"
+  spec.license       = "Apache-2.0"
 
   spec.files         = `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^(test|spec|features)/}) }
   spec.bindir        = "bin"
