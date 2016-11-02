@@ -37,14 +37,14 @@ class AnonymizerFilterTest < Test::Unit::TestCase
     conf
   end
 
-  def create_driver(conf=nil, tag='test')
+  def create_driver(conf = nil)
     conf ||= generate_config()
-    Fluent::Test::FilterTestDriver.new(Fluent::EncryptFilter, tag).configure(conf)
+    Fluent::Test::Driver::Filter.new(Fluent::Plugin::EncryptFilter).configure(conf)
   end
 
   test 'configure it successfully' do
     d = create_driver
-    assert{ d.instance.is_a? Fluent::EncryptFilter }
+    assert{ d.instance.is_a? Fluent::Plugin::EncryptFilter }
   end
 
   test 'configure raises error for missing key/iv' do
@@ -85,22 +85,21 @@ class AnonymizerFilterTest < Test::Unit::TestCase
     ]
     config = generate_config(base_conf, key, nil)
     d = create_driver(config)
-    assert{ d.instance.is_a? Fluent::EncryptFilter }
+    assert{ d.instance.is_a? Fluent::Plugin::EncryptFilter }
   end
 
   test 'filter records with encryption' do
     d = create_driver
-    time = Time.now.to_i
-    d.run do
-      d.emit({"data" => "value", "data2" => "value", "secret_data" => "value 2"}, time)
-      d.emit({"data" => "value", "data2" => "value", "secret_data" => "value 2"}, time)
-      d.emit({"data" => "value", "data2" => "value", "secret_data" => "value 2"}, time)
-      d.emit({"data" => "value", "data2" => "value", "secret_data" => "value 2"}, time)
+    time = event_time
+    d.run(default_tag: "test") do
+      d.feed(time, {"data" => "value", "data2" => "value", "secret_data" => "value 2"})
+      d.feed(time, {"data" => "value", "data2" => "value", "secret_data" => "value 2"})
+      d.feed(time, {"data" => "value", "data2" => "value", "secret_data" => "value 2"})
+      d.feed(time, {"data" => "value", "data2" => "value", "secret_data" => "value 2"})
     end
-    filtered = d.filtered_as_array
+    filtered = d.filtered
     assert_equal 4, filtered.size
-    tag, t, r = filtered[0]
-    assert_equal 'test', tag
+    t, r = filtered[0]
     assert_equal time, t
     assert_equal 3, r.size
     assert_equal "value", r["data"]

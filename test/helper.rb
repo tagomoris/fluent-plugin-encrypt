@@ -4,7 +4,9 @@ require 'test/unit'
 $LOAD_PATH.unshift(File.join(__dir__, '..', 'lib'))
 $LOAD_PATH.unshift(__dir__)
 require 'fluent/test'
+require 'fluent/test/helpers'
+require 'fluent/test/driver/filter'
 
-# $log = Fluent::Log.new(Fluent::Test::DummyLogDevice.new, Fluent::Log::LEVEL_INFO)
+include Fluent::Test::Helpers
 
 require 'fluent/plugin/filter_encrypt'
