@@ -48,13 +48,16 @@ class AnonymizerFilterTest < Test::Unit::TestCase
       assert{ d.instance.is_a? Fluent::Plugin::EncryptFilter }
     end
 
-    test 'configure raises error for missing key/iv' do
+    test 'raise error when both encrypt_key_hex and encrypt_iv_hex is missing' do
       assert_raises(Fluent::ConfigError){
         create_driver(%[
           algorithm aes_256_cbc
           key mykey1
         ])
       }
+    end
+
+    test 'raise error when encrypt_iv_hex is missing' do
       assert_raises(Fluent::ConfigError){
         create_driver(%[
           algorithm aes_256_cbc
@@ -62,10 +65,14 @@ class AnonymizerFilterTest < Test::Unit::TestCase
           key mykey2
         ])
       }
+    end
 
+    test 'key' do
       d = create_driver
       assert_equal "secret_data", d.instance.key
+    end
 
+    test 'target_keys' do
       d = create_driver(%[
         algorithm aes_256_cbc
         encrypt_key_hex #{@aes256cbc_key_hex}
