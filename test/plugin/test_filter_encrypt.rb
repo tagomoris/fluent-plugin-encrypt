@@ -42,6 +42,7 @@ class AnonymizerFilterTest < Test::Unit::TestCase
     Fluent::Test::Driver::Filter.new(Fluent::Plugin::EncryptFilter).configure(conf)
   end
 
+  sub_test_case "configure" do
   test 'configure it successfully' do
     d = create_driver
     assert{ d.instance.is_a? Fluent::Plugin::EncryptFilter }
@@ -86,6 +87,7 @@ class AnonymizerFilterTest < Test::Unit::TestCase
     config = generate_config(base_conf, key, nil)
     d = create_driver(config)
     assert{ d.instance.is_a? Fluent::Plugin::EncryptFilter }
+  end
   end
 
   test 'filter records with encryption' do
