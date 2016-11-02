@@ -1,9 +1,9 @@
-require 'fluent/filter'
+require 'fluent/plugin/filter'
 require 'openssl'
 require 'base64'
 
-module Fluent
-  class EncryptFilter < Filter
+module Fluent::Plugin
+  class EncryptFilter < Fluent::Plugin::Filter
     Fluent::Plugin.register_filter('encrypt', self)
 
     SUPPORTED_ALGORITHMS = {
@@ -52,18 +52,14 @@ module Fluent
       }
     end
 
-    def filter_stream(tag, es)
-      new_es = MultiEventStream.new
-      es.each do |time, record|
-        r = record.dup
-        record.each_pair do |key, value|
-          if @target_keys.include?(key)
-            r[key] = encrypt(value)
-          end
+    def filter(tag, time, record)
+      encrypted_record = record.dup
+      record.each_pair do |key, value|
+        if @target_keys.include?(key)
+          encrypted_record[key] = encrypt(value)
         end
-        new_es.add(time, r)
       end
-      new_es
+      encrypted_record
     end
 
     def encrypt(value)

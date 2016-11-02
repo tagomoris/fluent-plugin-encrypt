@@ -37,70 +37,78 @@ class AnonymizerFilterTest < Test::Unit::TestCase
     conf
   end
 
-  def create_driver(conf=nil, tag='test')
+  def create_driver(conf = nil)
     conf ||= generate_config()
-    Fluent::Test::FilterTestDriver.new(Fluent::EncryptFilter, tag).configure(conf)
+    Fluent::Test::Driver::Filter.new(Fluent::Plugin::EncryptFilter).configure(conf)
   end
 
-  test 'configure it successfully' do
-    d = create_driver
-    assert{ d.instance.is_a? Fluent::EncryptFilter }
-  end
+  sub_test_case "configure" do
+    test 'configure it successfully' do
+      d = create_driver
+      assert{ d.instance.is_a? Fluent::Plugin::EncryptFilter }
+    end
 
-  test 'configure raises error for missing key/iv' do
-    assert_raises(Fluent::ConfigError){
-      create_driver(%[
-        algorithm aes_256_cbc
-        key mykey1
-      ])
-    }
-    assert_raises(Fluent::ConfigError){
-      create_driver(%[
+    test 'raise error when both encrypt_key_hex and encrypt_iv_hex is missing' do
+      assert_raises(Fluent::ConfigError){
+        create_driver(%[
+          algorithm aes_256_cbc
+          key mykey1
+        ])
+      }
+    end
+
+    test 'raise error when encrypt_iv_hex is missing' do
+      assert_raises(Fluent::ConfigError){
+        create_driver(%[
+          algorithm aes_256_cbc
+          encrypt_key_hex #{@aes256cbc_key_hex}
+          key mykey2
+        ])
+      }
+    end
+
+    test 'key' do
+      d = create_driver
+      assert_equal "secret_data", d.instance.key
+    end
+
+    test 'target_keys' do
+      d = create_driver(%[
         algorithm aes_256_cbc
         encrypt_key_hex #{@aes256cbc_key_hex}
-        key mykey2
+        encrypt_iv_hex  #{@aes256cbc_iv_hex}
+        key mykey3
       ])
-    }
+      assert_equal ["mykey3"], d.instance.target_keys
+    end
 
-    d = create_driver
-    assert_equal "secret_data", d.instance.key
-
-    d = create_driver(%[
-      algorithm aes_256_cbc
-      encrypt_key_hex #{@aes256cbc_key_hex}
-      encrypt_iv_hex  #{@aes256cbc_iv_hex}
-      key mykey3
-    ])
-    assert_equal ["mykey3"], d.instance.target_keys
-  end
-
-  test 'configure with AES-256-ECB' do
-    enc = OpenSSL::Cipher.new("AES-256-ECB")
-    enc.encrypt
-    key_iv_aes256ecb = OpenSSL::PKCS5.pbkdf2_hmac_sha1(@password, @salt, 2000, enc.key_len)
-    key = Base64.encode64(key_iv_aes256ecb[0, enc.key_len])
-    base_conf = %[
-      key secret_field
-      algorithm aes_256_ecb
-    ]
-    config = generate_config(base_conf, key, nil)
-    d = create_driver(config)
-    assert{ d.instance.is_a? Fluent::EncryptFilter }
+    test 'configure with AES-256-ECB' do
+      enc = OpenSSL::Cipher.new("AES-256-ECB")
+      enc.encrypt
+      key_iv_aes256ecb = OpenSSL::PKCS5.pbkdf2_hmac_sha1(@password, @salt, 2000, enc.key_len)
+      key = Base64.encode64(key_iv_aes256ecb[0, enc.key_len])
+      base_conf = %[
+        key secret_field
+        algorithm aes_256_ecb
+      ]
+      config = generate_config(base_conf, key, nil)
+      d = create_driver(config)
+      assert{ d.instance.is_a? Fluent::Plugin::EncryptFilter }
+    end
   end
 
   test 'filter records with encryption' do
     d = create_driver
-    time = Time.now.to_i
-    d.run do
-      d.emit({"data" => "value", "data2" => "value", "secret_data" => "value 2"}, time)
-      d.emit({"data" => "value", "data2" => "value", "secret_data" => "value 2"}, time)
-      d.emit({"data" => "value", "data2" => "value", "secret_data" => "value 2"}, time)
-      d.emit({"data" => "value", "data2" => "value", "secret_data" => "value 2"}, time)
+    time = event_time
+    d.run(default_tag: "test") do
+      d.feed(time, {"data" => "value", "data2" => "value", "secret_data" => "value 2"})
+      d.feed(time, {"data" => "value", "data2" => "value", "secret_data" => "value 2"})
+      d.feed(time, {"data" => "value", "data2" => "value", "secret_data" => "value 2"})
+      d.feed(time, {"data" => "value", "data2" => "value", "secret_data" => "value 2"})
     end
-    filtered = d.filtered_as_array
+    filtered = d.filtered
     assert_equal 4, filtered.size
-    tag, t, r = filtered[0]
-    assert_equal 'test', tag
+    t, r = filtered[0]
     assert_equal time, t
     assert_equal 3, r.size
     assert_equal "value", r["data"]
