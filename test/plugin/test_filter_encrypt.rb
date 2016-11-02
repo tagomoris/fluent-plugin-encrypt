@@ -43,51 +43,51 @@ class AnonymizerFilterTest < Test::Unit::TestCase
   end
 
   sub_test_case "configure" do
-  test 'configure it successfully' do
-    d = create_driver
-    assert{ d.instance.is_a? Fluent::Plugin::EncryptFilter }
-  end
+    test 'configure it successfully' do
+      d = create_driver
+      assert{ d.instance.is_a? Fluent::Plugin::EncryptFilter }
+    end
 
-  test 'configure raises error for missing key/iv' do
-    assert_raises(Fluent::ConfigError){
-      create_driver(%[
-        algorithm aes_256_cbc
-        key mykey1
-      ])
-    }
-    assert_raises(Fluent::ConfigError){
-      create_driver(%[
+    test 'configure raises error for missing key/iv' do
+      assert_raises(Fluent::ConfigError){
+        create_driver(%[
+          algorithm aes_256_cbc
+          key mykey1
+        ])
+      }
+      assert_raises(Fluent::ConfigError){
+        create_driver(%[
+          algorithm aes_256_cbc
+          encrypt_key_hex #{@aes256cbc_key_hex}
+          key mykey2
+        ])
+      }
+
+      d = create_driver
+      assert_equal "secret_data", d.instance.key
+
+      d = create_driver(%[
         algorithm aes_256_cbc
         encrypt_key_hex #{@aes256cbc_key_hex}
-        key mykey2
+        encrypt_iv_hex  #{@aes256cbc_iv_hex}
+        key mykey3
       ])
-    }
+      assert_equal ["mykey3"], d.instance.target_keys
+    end
 
-    d = create_driver
-    assert_equal "secret_data", d.instance.key
-
-    d = create_driver(%[
-      algorithm aes_256_cbc
-      encrypt_key_hex #{@aes256cbc_key_hex}
-      encrypt_iv_hex  #{@aes256cbc_iv_hex}
-      key mykey3
-    ])
-    assert_equal ["mykey3"], d.instance.target_keys
-  end
-
-  test 'configure with AES-256-ECB' do
-    enc = OpenSSL::Cipher.new("AES-256-ECB")
-    enc.encrypt
-    key_iv_aes256ecb = OpenSSL::PKCS5.pbkdf2_hmac_sha1(@password, @salt, 2000, enc.key_len)
-    key = Base64.encode64(key_iv_aes256ecb[0, enc.key_len])
-    base_conf = %[
-      key secret_field
-      algorithm aes_256_ecb
-    ]
-    config = generate_config(base_conf, key, nil)
-    d = create_driver(config)
-    assert{ d.instance.is_a? Fluent::Plugin::EncryptFilter }
-  end
+    test 'configure with AES-256-ECB' do
+      enc = OpenSSL::Cipher.new("AES-256-ECB")
+      enc.encrypt
+      key_iv_aes256ecb = OpenSSL::PKCS5.pbkdf2_hmac_sha1(@password, @salt, 2000, enc.key_len)
+      key = Base64.encode64(key_iv_aes256ecb[0, enc.key_len])
+      base_conf = %[
+        key secret_field
+        algorithm aes_256_ecb
+      ]
+      config = generate_config(base_conf, key, nil)
+      d = create_driver(config)
+      assert{ d.instance.is_a? Fluent::Plugin::EncryptFilter }
+    end
   end
 
   test 'filter records with encryption' do
