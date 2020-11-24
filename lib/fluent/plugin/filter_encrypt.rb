@@ -46,8 +46,8 @@ module Fluent
       @enc_generator = ->(){
         enc = OpenSSL::Cipher.new(algorithm[:name])
         enc.encrypt
-        enc.key = @enc_key
-        enc.iv  = @enc_iv if @enc_iv
+        enc.key = @enc_key[0..31]
+        enc.iv  = @enc_iv[0..15] if @enc_iv
         enc
       }
     end
