@@ -16,4 +16,3 @@ key = OpenSSL::PKCS5.pbkdf2_hmac(password, salt, 20000, cipher.key_len, OpenSSL:
 
 puts "key=#{key.unpack('H*')[0].upcase}"
 puts "iv =#{iv.unpack('H*')[0].upcase}"
-
