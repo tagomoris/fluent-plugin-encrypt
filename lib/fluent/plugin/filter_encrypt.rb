@@ -8,8 +8,6 @@ module Fluent
 
     SUPPORTED_ALGORITHMS = {
       aes_256_cbc: { name: "AES-256-CBC", use_iv: true },
-      aes_256_ctr: { name: "AES-256-CTR", use_iv: true },
-      aes_256_cfb: { name: "AES-256-CFB", use_iv: true },
       aes_192_cbc: { name: "AES-192-CBC", use_iv: true },
       aes_128_cbc: { name: "AES-128-CBC", use_iv: true },
       aes_256_ecb: { name: "AES-256-ECB", use_iv: false },
