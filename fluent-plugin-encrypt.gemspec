@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |spec|
   spec.name          = "fluent-plugin-encrypt"
-  spec.version       = "0.1.1"
+  spec.version       = "0.1.2"
   spec.authors       = ["TAGOMORI Satoshi"]
   spec.email         = ["tagomoris@gmail.com"]
 
