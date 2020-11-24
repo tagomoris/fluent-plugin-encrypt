@@ -61,6 +61,7 @@ digest = OpenSSL::Digest::SHA256.new
 
 key = enc_key[0..31]
 cipher.key = key
+cipher.iv = iv[0..15]
 # puts "#{key.unpack('H*')[0].upcase}"
 # puts "#{iv.unpack('H*')[0].upcase}"
 
@@ -71,23 +72,23 @@ encrypted << cipher.final
 puts "#{encrypted}"
 
 
-cipher = OpenSSL::Cipher.new 'AES-256-CBC'
-cipher.decrypt
-# cipher.iv = enc_iv[0..16] # the one generated with #random_iv
-# cipher.iv = cipher.random_iv
+# cipher = OpenSSL::Cipher.new 'AES-256-CBC'
+# cipher.decrypt
+# # cipher.iv = enc_iv[0..16] # the one generated with #random_iv
+# # cipher.iv = cipher.random_iv
 
-pwd = 'some hopefully not to easily guessable password'
-# # salt = ... # the one generated above
-# salt = OpenSSL::Random.random_bytes 16
-iter = 20000
-key_len = cipher.key_len
-digest = OpenSSL::Digest::SHA256.new
+# pwd = 'some hopefully not to easily guessable password'
+# # # salt = ... # the one generated above
+# # salt = OpenSSL::Random.random_bytes 16
+# iter = 20000
+# key_len = cipher.key_len
+# digest = OpenSSL::Digest::SHA256.new
 
-key = OpenSSL::PKCS5.pbkdf2_hmac(pwd, salt, iter, key_len, digest)
-cipher.key = enc_key[0..31]
+# key = OpenSSL::PKCS5.pbkdf2_hmac(pwd, salt, iter, key_len, digest)
+# cipher.key = enc_key[0..31]
 
 
-decrypted = cipher.update encrypted
-decrypted << cipher.final
+# decrypted = cipher.update encrypted
+# decrypted << cipher.final
 
-puts "#{decrypted}"
+# puts "#{decrypted}"
