@@ -37,12 +37,15 @@ module Fluent
         raise Fluent::ConfigError, "Encryption algorithm #{@algorithm} requires 'encrypt_iv_hex'"
       end
 
-      @enc_key = Base64.decode64(@encrypt_key_hex)
+      @enc_key = [@encrypt_key_hex].pack('H*')
+      @enc_key += "\x00" * (32 - @enc_key.length) if @enc_key.length < 32
+
       @enc_iv = if @encrypt_iv_hex
-                  Base64.decode64(@encrypt_iv_hex)
+		  [@encrypt_iv_hex].pack('H*')[0, 16]
                 else
                   nil
                 end
+
       @enc_generator = ->(){
         enc = OpenSSL::Cipher.new(algorithm[:name])
         enc.encrypt
