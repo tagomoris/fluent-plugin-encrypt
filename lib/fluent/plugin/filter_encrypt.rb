@@ -6,13 +6,15 @@ module Fluent
   class EncryptFilter < Filter
     Fluent::Plugin.register_filter('encrypt', self)
 
+
     SUPPORTED_ALGORITHMS = {
-      aes_256_cbc: { name: "AES-256-CBC", use_iv: true },
-      aes_192_cbc: { name: "AES-192-CBC", use_iv: true },
-      aes_128_cbc: { name: "AES-128-CBC", use_iv: true },
-      aes_256_ecb: { name: "AES-256-ECB", use_iv: false },
-      aes_192_ecb: { name: "AES-192-ECB", use_iv: false },
-      aes_128_ecb: { name: "AES-128-ECB", use_iv: false },
+      aes_256_cbc: { name: "AES-256-CBC", use_iv: true, key_len: 32, iv_len: 16},
+      aes_192_cbc: { name: "AES-192-CBC", use_iv: true, key_len: 32, iv_len: 16},
+      aes_128_cbc: { name: "AES-128-CBC", use_iv: true, key_len: 32, iv_len: 16},
+      aes_256_ecb: { name: "AES-256-ECB", use_iv: false, key_len: 32, iv_len: 16},
+      aes_192_ecb: { name: "AES-192-ECB", use_iv: false, key_len: 32, iv_len: 16},
+      aes_128_ecb: { name: "AES-128-ECB", use_iv: false, key_len: 32, iv_len: 16},
+      aes_256_gcm: { name: "AES-256-GCM", use_iv: false, key_len: 32, iv_len: 12},
     }
 
     config_param :algorithm, :enum, list: SUPPORTED_ALGORITHMS.keys, default: :aes_256_cbc
@@ -37,20 +39,25 @@ module Fluent
         raise Fluent::ConfigError, "Encryption algorithm #{@algorithm} requires 'encrypt_iv_hex'"
       end
 
+
+      req_key_len = SUPPORTED_ALGORITHMS[@algorithm][:key_len]
+      req_iv_len =  SUPPORTED_ALGORITHMS[@algorithm][:iv_len]
+
       @enc_key = [@encrypt_key_hex].pack('H*')
-      @enc_key += "\x00" * (32 - @enc_key.length) if @enc_key.length < 32
+      @enc_key += "\x00" * (req_key_len - @enc_key.length) if @enc_key.length < req_key_len
 
       @enc_iv = if @encrypt_iv_hex
-		  [@encrypt_iv_hex].pack('H*')[0, 16]
+                  [@encrypt_iv_hex].pack('H*')[0, req_iv_len]
                 else
                   nil
                 end
+      
 
       @enc_generator = ->(){
         enc = OpenSSL::Cipher.new(algorithm[:name])
-        enc.encrypt
         enc.key = @enc_key
         enc.iv  = @enc_iv if @enc_iv
+        enc.encrypt
         enc
       }
     end
