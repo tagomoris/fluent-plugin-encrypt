@@ -24,6 +24,7 @@ module Fluent
     config_param :key,  :string, default: nil
     config_param :keys, :array, default: []
 
+
     attr_reader :target_keys
 
     def configure(conf)
@@ -67,7 +68,7 @@ module Fluent
       es.each do |time, record|
         r = record.dup
         record.each_pair do |key, value|
-          if @target_keys.include?(key)
+          if @target_keys.include?("*") ||  @target_keys.include?(key)
             r[key] = encrypt(value)
           end
         end
