@@ -6,7 +6,8 @@ module Fluent
   class EncryptFilter < Filter
     Fluent::Plugin.register_filter('encrypt', self)
 
-
+    EncEnabled = "true"
+    
     SUPPORTED_ALGORITHMS = {
       aes_256_cbc: { name: "AES-256-CBC", use_iv: true, key_len: 32, iv_len: 16},
       aes_192_cbc: { name: "AES-192-CBC", use_iv: true, key_len: 32, iv_len: 16},
@@ -16,6 +17,7 @@ module Fluent
       aes_128_ecb: { name: "AES-128-ECB", use_iv: false, key_len: 32, iv_len: 16},
       aes_256_gcm: { name: "AES-256-GCM", use_iv: false, key_len: 32, iv_len: 12},
     }
+    
 
     config_param :algorithm, :enum, list: SUPPORTED_ALGORITHMS.keys, default: :aes_256_cbc
     config_param :encrypt_key_hex, :string
@@ -26,6 +28,7 @@ module Fluent
 
 
     attr_reader :target_keys
+
 
     def configure(conf)
       super
@@ -65,13 +68,16 @@ module Fluent
       }
     end
 
+
     def filter_stream(tag, es)
       new_es = MultiEventStream.new
       es.each do |time, record|
         r = record.dup
-        record.each_pair do |key, value|
-          if @target_keys.include?("*") ||  @target_keys.include?(key)
-            r[key] = encrypt(value)
+        if EncEnabled.eql?(@encrypt_flag)
+          record.each_pair do |key, value|
+            if @target_keys.include?("*") || @target_keys.include?(key)
+              r[key] = encrypt(value)
+            end
           end
         end
         new_es.add(time, r)
