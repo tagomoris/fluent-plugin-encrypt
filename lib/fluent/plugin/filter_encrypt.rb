@@ -45,17 +45,19 @@ module Fluent
       req_iv_len =  SUPPORTED_ALGORITHMS[@algorithm][:iv_len]
 
       @enc_key = [@encrypt_key_hex].pack('H*')
-      @enc_key += "\x00" * (req_key_len - @enc_key.length) if @enc_key.length < req_key_len
+      @enc_key = @enc_key.ljust(32, "\0")#
+      
 
       @enc_iv = if @encrypt_iv_hex
                   [@encrypt_iv_hex].pack('H*')[0, req_iv_len]
                 else
                   nil
                 end
-      
+
+      @algo = algorithm[:name]
 
       @enc_generator = ->(){
-        enc = OpenSSL::Cipher.new(algorithm[:name])
+        enc = OpenSSL::Cipher.new(@algo)
         enc.key = @enc_key
         enc.iv  = @enc_iv if @enc_iv
         enc.encrypt
@@ -83,6 +85,18 @@ module Fluent
       encrypted << enc.update(value)
       encrypted << enc.final
       Base64.encode64(encrypted)
+    end
+
+
+    def decrypt(value)
+      decrypted_data = ""
+      cipher = OpenSSL::Cipher.new(@algo)
+      cipher.decrypt
+
+      cipher.key = @enc_key
+      cipher.iv = @enc_iv
+
+      decrypted_data << cipher.update(Base64.decode64(value))
     end
   end
 end
